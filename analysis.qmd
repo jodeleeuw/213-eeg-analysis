@@ -1,0 +1,62 @@
+---
+title: "213 ERP"
+format: html
+editor: visual
+---
+
+```{r}
+#| label: Load libraries
+#| include: false
+
+library(readr)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+#| label: Load EEG data
+#| include: false
+
+eeg_data <- read_csv("data/final/eeg.csv")
+
+```
+
+```{r}
+
+subject_erps <- eeg_data %>%
+  filter(correct==TRUE) %>%
+  group_by(subject, electrode, normal, ERP_type, t) %>%
+  summarize(m_subject = mean(v))
+```
+
+```{r}
+grand_avg <- subject_erps %>%
+  group_by(electrode, normal, ERP_type, t) %>%
+  summarize(m=mean(m_subject), se=sd(m_subject)/sqrt(n()))
+```
+
+```{r}
+
+ggplot(grand_avg, aes(x=t, y=m, ymin=m-se, ymax=m+se, color=normal, fill=normal))+
+  facet_grid(electrode~ERP_type, scales="free_y" )+
+  geom_vline(xintercept=0)+
+  geom_line()+
+  geom_ribbon(color=NA, alpha=0.3)+
+  theme_minimal()+
+  theme(panel.grid = element_blank())
+```
+
+```{r}
+
+
+cz_subj <- subject_erps %>%
+  filter(electrode=="Cz") %>%
+  mutate(m = m_subject)
+
+ggplot(cz_subj,  aes(x=t, y=m, color=normal, fill=normal))+
+  facet_grid(subject~ERP_type, scales="free_y" )+
+  geom_vline(xintercept=0)+
+  geom_line()+
+  theme_minimal()+
+  theme(panel.grid = element_blank())
+```
